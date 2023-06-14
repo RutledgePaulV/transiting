@@ -61,16 +61,26 @@
   {(.tag PatternReadWriteHandler "") PatternReadWriteHandler
    (.tag InstantReadWriteHandler "") InstantReadWriteHandler})
 
-(defn encode [data output-stream]
-  (with-open [compressed (GZIPOutputStream. output-stream)]
-    (let [options {:handlers        WriteHandlers
-                   :default-handler DefaultReadWriteHandler}
-          writer  (transit/writer compressed :msgpack options)]
-      (transit/write writer data))))
+(defn encode
+  ([data output-stream]
+   (encode data output-stream {}))
+  ([data output-stream {:keys [handlers format]
+                        :or   {handlers {} format :json}
+                        :as   options}]
+   (with-open [compressed (GZIPOutputStream. output-stream)]
+     (let [options {:handlers        (merge WriteHandlers handlers)
+                    :default-handler DefaultReadWriteHandler}
+           writer  (transit/writer compressed format options)]
+       (transit/write writer data)))))
 
-(defn decode [input-stream]
-  (with-open [compressed (GZIPInputStream. input-stream)]
-    (let [options {:handlers        ReadHandlers
-                   :default-handler DefaultReadWriteHandler}
-          reader  (transit/reader compressed :msgpack options)]
-      (transit/read reader))))
+(defn decode
+  ([input-stream]
+   (decode input-stream {}))
+  ([input-stream {:keys [handlers format]
+                  :or   {handlers {} format :json}
+                  :as   options}]
+   (with-open [compressed (GZIPInputStream. input-stream)]
+     (let [options {:handlers        (merge ReadHandlers handlers)
+                    :default-handler DefaultReadWriteHandler}
+           reader  (transit/reader compressed format options)]
+       (transit/read reader)))))
