@@ -1,0 +1,15 @@
+{:paths
+ ["src"]
+
+ :deps
+ {com.cognitect/transit-clj {:mvn/version "1.0.333"}
+  org.msgpack/msgpack       {:mvn/version "0.6.12"}
+  com.github.luben/zstd-jni {:mvn/version "1.5.5-4"}}
+
+ :aliases
+ {:test {:extra-paths ["test"]
+         :extra-deps  {io.github.cognitect-labs/test-runner
+                       {:git/url "https://github.com/cognitect-labs/test-runner.git"
+                        :sha     "7284cda41fb9edc0f3bc6b6185cfb7138fc8a023"}}
+         :main-opts   ["-m" "cognitect.test-runner"]
+         :exec-fn     cognitect.test-runner.api/test}}}
