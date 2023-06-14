@@ -2,9 +2,7 @@
  ["src"]
 
  :deps
- {com.cognitect/transit-clj {:mvn/version "1.0.333"}
-  org.msgpack/msgpack       {:mvn/version "0.6.12"}
-  com.github.luben/zstd-jni {:mvn/version "1.5.5-4"}}
+ {com.cognitect/transit-clj {:mvn/version "1.0.333"}}
 
  :aliases
  {:test {:extra-paths ["test"]

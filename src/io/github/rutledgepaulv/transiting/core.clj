@@ -2,11 +2,11 @@
   (:require [cognitect.transit :as transit])
   (:import (clojure.lang TaggedLiteral)
            (com.cognitect.transit DefaultReadHandler ReadHandler WriteHandler)
-           (com.github.luben.zstd ZstdInputStream ZstdOutputStream)
            (java.time Instant)
-           (java.util.regex Pattern)))
+           (java.util.regex Pattern)
+           (java.util.zip GZIPInputStream GZIPOutputStream)))
 
-(def PatternHandler
+(def PatternReadWriteHandler
   (reify
     WriteHandler
     (tag [this value]
@@ -17,7 +17,7 @@
     (fromRep [this [value flags]]
       (Pattern/compile value flags))))
 
-(def InstantHandler
+(def InstantReadWriteHandler
   (reify
     WriteHandler
     (tag [this value]
@@ -28,17 +28,15 @@
     (fromRep [this value]
       (Instant/parse value))))
 
-(def TaggedLiteralHandler
-  (reify WriteHandler
+(def TaggedLiteralWriteHandler
+  (reify
+    WriteHandler
     (tag [this value]
       (str (.-tag ^TaggedLiteral value)))
     (rep [this value]
-      (.-form ^TaggedLiteral value))
-    ReadHandler
-    (fromRep [this value]
-      value)))
+      (.-form ^TaggedLiteral value))))
 
-(def DefaultHandler
+(def DefaultReadWriteHandler
   (reify
     WriteHandler
     (tag [this value]
@@ -50,29 +48,29 @@
       (tagged-literal (symbol tag) rep))))
 
 (def WriteHandlers
-  {Pattern       PatternHandler
-   Instant       InstantHandler
-   TaggedLiteral TaggedLiteralHandler
+  {Pattern       PatternReadWriteHandler
+   Instant       InstantReadWriteHandler
+   TaggedLiteral TaggedLiteralWriteHandler
    ; work around edge case in transit-java
    ; where object's supertype is null and
    ; so it encodes it as null rather than
    ; throwing an error
-   Object        DefaultHandler})
+   Object        DefaultReadWriteHandler})
 
 (def ReadHandlers
-  {(.tag PatternHandler "") PatternHandler
-   (.tag InstantHandler "") InstantHandler})
+  {(.tag PatternReadWriteHandler "") PatternReadWriteHandler
+   (.tag InstantReadWriteHandler "") InstantReadWriteHandler})
 
 (defn encode [data output-stream]
-  (with-open [compressed (ZstdOutputStream. output-stream)]
+  (with-open [compressed (GZIPOutputStream. output-stream)]
     (let [options {:handlers        WriteHandlers
-                   :default-handler DefaultHandler}
+                   :default-handler DefaultReadWriteHandler}
           writer  (transit/writer compressed :msgpack options)]
       (transit/write writer data))))
 
 (defn decode [input-stream]
-  (with-open [compressed (ZstdInputStream. input-stream)]
+  (with-open [compressed (GZIPInputStream. input-stream)]
     (let [options {:handlers        ReadHandlers
-                   :default-handler DefaultHandler}
+                   :default-handler DefaultReadWriteHandler}
           reader  (transit/reader compressed :msgpack options)]
       (transit/read reader))))
