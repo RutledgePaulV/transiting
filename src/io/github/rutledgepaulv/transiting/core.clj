@@ -38,16 +38,16 @@
     (fromRep [this value]
       value)))
 
-(def WriteHandlerDefault
-  (reify WriteHandler
+(def DefaultHandler
+  (reify
+    WriteHandler
     (tag [this value]
       (throw (ex-info "No handler found for type" {:type (type value)})))
     (rep [this value]
       (throw (ex-info "No handler found for type" {:type (type value)})))
-    (stringRep [this value]
-      (throw (ex-info "No handler found for type" {:type (type value)})))
-    (getVerboseHandler [this]
-      nil)))
+    DefaultReadHandler
+    (fromRep [this tag rep]
+      (tagged-literal (symbol tag) rep))))
 
 (def WriteHandlers
   {Pattern       PatternHandler
@@ -57,27 +57,22 @@
    ; where object's supertype is null and
    ; so it encodes it as null rather than
    ; throwing an error
-   Object        WriteHandlerDefault})
+   Object        DefaultHandler})
 
 (def ReadHandlers
   {(.tag PatternHandler "") PatternHandler
    (.tag InstantHandler "") InstantHandler})
 
-(def ReadHandlerDefault
-  (reify DefaultReadHandler
-    (fromRep [this tag rep]
-      (tagged-literal (symbol tag) rep))))
-
 (defn encode [data output-stream]
   (with-open [compressed (ZstdOutputStream. output-stream)]
     (let [options {:handlers        WriteHandlers
-                   :default-handler WriteHandlerDefault}
+                   :default-handler DefaultHandler}
           writer  (transit/writer compressed :msgpack options)]
       (transit/write writer data))))
 
 (defn decode [input-stream]
   (with-open [compressed (ZstdInputStream. input-stream)]
     (let [options {:handlers        ReadHandlers
-                   :default-handler ReadHandlerDefault}
+                   :default-handler DefaultHandler}
           reader  (transit/reader compressed :msgpack options)]
       (transit/read reader))))
