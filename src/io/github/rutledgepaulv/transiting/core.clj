@@ -12,14 +12,10 @@
     (tag [this value]
       "pattern")
     (rep [this value]
-      (str value))
-    (stringRep [this value]
-      (str value))
-    (getVerboseHandler [this]
-      nil)
+      [(str value) (.flags ^Pattern value)])
     ReadHandler
-    (fromRep [this value]
-      (re-pattern value))))
+    (fromRep [this [value flags]]
+      (Pattern/compile value flags))))
 
 (def InstantHandler
   (reify
@@ -28,10 +24,6 @@
       "instant")
     (rep [this value]
       (str value))
-    (stringRep [this value]
-      (str value))
-    (getVerboseHandler [this]
-      nil)
     ReadHandler
     (fromRep [this value]
       (Instant/parse value))))
@@ -42,10 +34,6 @@
       (str (.-tag ^TaggedLiteral value)))
     (rep [this value]
       (.-form ^TaggedLiteral value))
-    (stringRep [this value]
-      )
-    (getVerboseHandler [this]
-      nil)
     ReadHandler
     (fromRep [this value]
       value)))

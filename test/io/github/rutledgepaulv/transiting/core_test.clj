@@ -15,7 +15,7 @@
 (deftest round-tripping-test
   (are [x] (let [y x z (round-trip y)]
              (if (instance? Pattern y)
-               (= (str y) (str z))
+               (and (= (str y) (str z)) (= (.flags y) (.flags z)))
                (= y z)))
     "1"
     (Instant/now)
@@ -27,6 +27,7 @@
     {:a 1 :b 2 :c 3}
     {[1 2 3] #{4 5 6}}
     #"this is a regex"
+    (Pattern/compile "this is a regex with flags" Pattern/CASE_INSENSITIVE)
     (Date/from (Instant/now))
     12345
     12345.6789
